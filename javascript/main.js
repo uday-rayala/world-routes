@@ -13,14 +13,16 @@ var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-svg.append("rect")
+var root = svg.append("g");
+
+root.append("rect")
     .attr("width", "100%")
     .attr("height", "100%")
     .attr("fill", "#54B4D4");
 
-var mapGroup = svg.append("g").attr("class", "map");
-var citiesGroup = svg.append("g").attr("class", "cities");
-var routesGroup = svg.append("g").attr("class", "routes");
+var mapGroup = root.append("g").attr("class", "map");
+var citiesGroup = root.append("g").attr("class", "cities");
+var routesGroup = root.append("g").attr("class", "routes");
 
 var world, cities, routes;
 
@@ -59,7 +61,7 @@ var draw = function() {
             return projection([city.longitude, city.latitude])[1];
         })
         .attr("r", 1)
-        .attr("fill", "red");
+        .attr("fill", "orange");
 };
 
 d3.json("json/world-50m.json", function(error, data) {
@@ -92,7 +94,7 @@ d3.csv("json/airports.csv", function(error, data) {
             .append("path")
             .attr("class", "route")
             .style("fill", "none")
-            .style("stroke", "red");
+            .style("stroke", "orange");
 
         newRoutes
             .transition()
@@ -116,3 +118,35 @@ d3.csv("json/airports.csv", function(error, data) {
 d3.json("json/routes.json", function(error, data) {
     routes = data;
 });
+
+var translateAndScale = function(t, s) {
+    var chartCoords = [width, height];
+    var viewCoords = [width, height];
+
+    var diff = [chartCoords[0] * s - viewCoords[0], chartCoords[1] * s - viewCoords[1]];
+
+    if (chartCoords[0] < viewCoords[0]) diff[0] = 0;
+    if (chartCoords[1] < viewCoords[1]) diff[1] = 0;
+
+    if (t[0] > 0) t[0] = 0;
+    if (t[1] > 0) t[1] = 0;
+
+    if (t[0] < -diff[0]) t[0] = -diff[0];
+    if (t[1] < -diff[1]) t[1] = -diff[1];
+
+    zoom.translate(t);
+    zoom.scale(s);
+}
+
+var zoom = d3.behavior.zoom()
+    .scaleExtent([1, 10])
+    .on("zoom",function() {
+        var t = d3.event.translate;
+        var s = d3.event.scale;
+
+        translateAndScale(t, s);
+
+        root.style("stroke-width", 1 / s).attr("transform", "translate(" + t + ")scale(" + s + ")");
+    });
+
+svg.call(zoom)
