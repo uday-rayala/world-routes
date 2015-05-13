@@ -38,9 +38,7 @@ var findCoordinates = function(code) {
     return [airport.longitude, airport.latitude];
 };
 
-var draw = function() {
-    if(!world) return;
-
+var drawMap = function() {
     mapGroup.selectAll("path")
         .data(topojson.feature(world, world.objects.countries).features)
         .enter()
@@ -48,20 +46,32 @@ var draw = function() {
         .attr("d", path)
         .attr("class", "land")
         .style("fill", "white");
+};
 
+var drawAirports = function(scale) {
+    if(!scale) {
+        scale = 1;
+    }
 
-    citiesGroup.selectAll("circle")
-        .data(cities)
+    var airports = citiesGroup.selectAll("path")
+        .data(cities);
+
+    airports
         .enter()
-        .append("circle")
-        .attr("cx", function(city) {
-            return projection([city.longitude, city.latitude])[0];
-        })
-        .attr("cy", function(city) {
-            return projection([city.longitude, city.latitude])[1];
-        })
-        .attr("r", 1)
+        .append("path")
         .attr("fill", "orange");
+
+    console.log(scale, 0.5/scale);
+    airports.attr("d", function(city) {
+        return path(d3.geo.circle().origin([city.longitude, city.latitude]).angle(0.5/scale)());
+    });
+};
+
+var draw = function() {
+    if(!world) return;
+
+    drawMap();
+    drawAirports();
 };
 
 d3.json("json/world-50m.json", function(error, data) {
@@ -147,6 +157,7 @@ var zoom = d3.behavior.zoom()
         translateAndScale(t, s);
 
         root.style("stroke-width", 1 / s).attr("transform", "translate(" + t + ")scale(" + s + ")");
+        drawAirports(s);
     });
 
 svg.call(zoom)
