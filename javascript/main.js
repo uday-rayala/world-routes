@@ -22,7 +22,7 @@ var mapGroup = svg.append("g").attr("class", "map");
 var citiesGroup = svg.append("g").attr("class", "cities");
 var routesGroup = svg.append("g").attr("class", "routes");
 
-d3.json("/json/world-50m.json", function(error, world) {
+d3.json("json/world-50m.json", function(error, world) {
     mapGroup.selectAll("path")
         .data(topojson.feature(world, world.objects.countries).features)
         .enter()
